@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>在线字数统计</title>
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<header>
+		<h1>在线字数统计</h1>
+		<p>实时统计字数、字符、行数及估算阅读时间。支持中英文混合。</p>
+	</header>
+
+	<main>
+		<section class="editor">
+			<textarea id="input" placeholder="在此粘贴或输入文本..."></textarea>
+			<div class="controls">
+				<button id="clear">清空</button>
+				<button id="clearPaste">清空并粘贴</button>
+				<button id="copy">复制</button>
+				<button id="download">下载 .txt</button>
+			</div>
+		</section>
+
+		<section class="stats" aria-live="polite">
+			<div class="stat"><span class="label">单词数</span><span id="words">0</span></div>
+			<div class="stat"><span class="label">字符（含空格）</span><span id="chars">0</span></div>
+			<div class="stat"><span class="label">字符（不含空格）</span><span id="charsNoSpace">0</span></div>
+			<div class="stat"><span class="label">行数</span><span id="lines">0</span></div>
+			<div class="stat"><span class="label">段落数</span><span id="paras">0</span></div>
+			<div class="stat"><span class="label">估计阅读时间</span><span id="readtime">0 分钟</span></div>
+
+			<!-- 新增：语言模式选择与显示 -->
+			<div class="stat mode">
+				<span class="label">模式</span>
+				<select id="mode" aria-label="选择语言模式">
+					<option value="auto">自动</option>
+					<option value="zh">中文</option>
+					<option value="en">英文</option>
+				</select>
+				<span id="detected" class="detected" aria-live="polite" title="自动检测到的语言">检测: 自动</span>
+			</div>
+		</section>
+	</main>
+
+	<footer>
+		<small>轻量离线版 · 无需联网</small>
+	</footer>
+
+	<script src="script.js"></script>
+</body>
+</html>

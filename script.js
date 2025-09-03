@@ -1,0 +1,315 @@
+(function(){
+	const ta = document.getElementById('input');
+	const outWords = document.getElementById('words');
+	const outChars = document.getElementById('chars');
+	const outCharsNoSpace = document.getElementById('charsNoSpace');
+	const outLines = document.getElementById('lines');
+	const outParas = document.getElementById('paras');
+	const outRead = document.getElementById('readtime');
+	const btnClear = document.getElementById('clear');
+	const btnCopy = document.getElementById('copy');
+	const btnDownload = document.getElementById('download');
+
+	// 新增：支持国旗按钮（data-lang="zh"/"en"/"auto"）或下拉选择回退
+	const flags = document.querySelectorAll('[data-lang]');
+	const modeSelect = document.getElementById('mode'); // 兼容先前页面变更
+	const detectedEl = document.getElementById('detected');
+
+	// 小工具：安全匹配 Unicode Han
+	function matchHan(text){
+		try{
+			return text.match(/\p{Script=Han}/gu) || [];
+		}catch(e){
+			return text.match(/[\u4e00-\u9fff]/g) || [];
+		}
+	}
+	// 句子计数（按常见句尾符号分割并过滤空段）
+	function countSentences(text){
+		if(!text || text.trim().length===0) return 0;
+		const parts = text.split(/[.!?。！？;；]+/g).map(s=>s.trim()).filter(s=>s.length>0);
+		return parts.length;
+	}
+	// 段落计数（两个或多个换行分段）
+	function countParas(text){
+		if(!text || text.trim().length===0) return 0;
+		return text.split(/\n{2,}/).filter(p=>p.trim().length>0).length;
+	}
+	// 非空文本序列（以空白分隔的片段）
+	function countNonEmptySequences(text){
+		const arr = text.match(/\S+/g);
+		return arr ? arr.length : 0;
+	}
+	// 标点计数（回退到非字母数字空白及汉字的字符）
+	function countPunctuation(text){
+		let p = 0;
+		try{
+			// Unicode 标点属性
+			const m = text.match(/\p{P}/gu);
+			if(m) p = m.length;
+		}catch(e){
+			// 回退：匹配非字母数字下划线空白和中文字符
+			const m = text.match(/[^\w\s\u4e00-\u9fff]/g);
+			if(m) p = m.length;
+		}
+		return p;
+	}
+	// 英文单词（拉丁序列）计数
+	function countLatinWords(text){
+		const m = text.match(/\b[A-Za-z0-9_']+\b/g);
+		return m ? m.length : 0;
+	}
+	// 英文字母计数
+	function countLetters(text){
+		const m = text.match(/[A-Za-z]/g);
+		return m ? m.length : 0;
+	}
+	// 文本计数（包括数字与中文）：将连续的英数或汉字序列视为一个文本单元
+	function countTextUnits(text){
+		const m = text.match(/([A-Za-z0-9]+|[\u4e00-\u9fff]+)/g);
+		return m ? m.length : 0;
+	}
+
+	// 语言检测：返回 'zh' | 'en' | 'mixed' | 'auto'（空文本）
+	function detectLanguage(text){
+		if(!text || text.trim().length===0) return 'auto';
+		const latin = countLatinWords(text);
+		const han = matchHan(text).length;
+		// 简单阈值判断
+		if(han > latin * 1.2 && han > 5) return 'zh';
+		if(latin > han * 1.2 && latin > 5) return 'en';
+		return 'mixed';
+	}
+
+	// 更新统计面板的标签（复用页面上现有六个 .stat 插槽）
+	function setStatLabels(labels){
+		const labelEls = document.querySelectorAll('.stat .label');
+		for(let i=0;i<labelEls.length;i++){
+			if(labels[i]) labelEls[i].textContent = labels[i];
+		}
+	}
+
+	// 主计数函数（根据模式返回所需项）
+	function computeAll(text, effectiveMode){
+		const totalChars = text.length;
+		const totalCharsNoSpace = text.replace(/\s+/g,'').length;
+		const sentences = countSentences(text);
+		const paras = countParas(text);
+		const hanCount = matchHan(text).length;
+		const latinWords = countLatinWords(text);
+		const letters = countLetters(text);
+		const textUnits = countTextUnits(text);
+		const punctuation = countPunctuation(text);
+		const nonEmptySeq = countNonEmptySequences(text);
+
+		// 中文模式：汉字数、文本数（含数字与英文）、非空文本数（文本数+标点）、总字符数、句数、段数
+		if(effectiveMode === 'zh'){
+			return {
+				labels: [
+					'字数（汉字）',
+					'文本数（含数字与英文）',
+					'非空文本数（含标点）',
+					'句数',
+					'段数',
+					'总字符数'
+				],
+				values: [
+					hanCount,
+					latinWords, // 文本数（这里按英文/数字序列计数）
+					(latinWords + punctuation),
+					sentences,
+					paras,
+					totalChars
+				],
+				wordsForRead: Math.max(1, hanCount) // 阅读时间参考
+			};
+		}
+
+		// 英文模式：单词数、句数、段数、字母数、文本数（含数字与中文）、非空文本数 / 总字符数
+		if(effectiveMode === 'en'){
+			return {
+				labels: [
+					'单词数',
+					'句数',
+					'段数',
+					'字母数',
+					'文本数（含数字与中文）',
+					'非空文本数 / 总字符数'
+				],
+				values: [
+					latinWords,
+					sentences,
+					paras,
+					letters,
+					textUnits,
+					(nonEmptySeq + ' / ' + totalChars)
+				],
+				wordsForRead: Math.max(1, latinWords)
+			};
+		}
+
+		// 自动/混合：综合显示（汉字+英文单词）与常规项
+		return {
+			labels: [
+				'单词数（中英混合）',
+				'字符（含空格）',
+				'非空文本数（含标点）',
+				'句数',
+				'段数',
+				'总字符数'
+			],
+			values: [
+				latinWords + hanCount,
+				totalChars,
+				nonEmptySeq,
+				sentences,
+				paras,
+				totalChars
+			],
+			wordsForRead: Math.max(1, latinWords + hanCount)
+		};
+	}
+
+	// 更新 UI（标签与数值）
+	function update(){
+		const text = ta.value || '';
+		// 决定当前模式：优先国旗按钮，其次下拉选择，最后自动
+		let userMode = 'auto';
+		// 国旗优先：查找被选中的 flag（带 class "active" 或 aria-pressed）
+		let chosenFlag = null;
+		if(flags && flags.length){
+			for(const f of flags){
+				if(f.getAttribute('aria-pressed') === 'true' || f.classList.contains('active')){
+					chosenFlag = f.getAttribute('data-lang');
+					break;
+				}
+			}
+		}
+		if(chosenFlag) userMode = chosenFlag;
+		else if(modeSelect && modeSelect.value) userMode = modeSelect.value;
+
+		const detected = detectLanguage(text);
+		let effective = userMode === 'auto' ? (detected === 'mixed' ? 'auto' : detected) : userMode;
+
+		// 更新检测显示（如果存在）
+		if(detectedEl){
+			let label = '检测: ';
+			if(detected === 'zh') label += '中文';
+			else if(detected === 'en') label += '英文';
+			else if(detected === 'mixed') label += '混合/自动';
+			else label += '自动';
+			detectedEl.textContent = label;
+		}
+
+		const res = computeAll(text, effective);
+		setStatLabels(res.labels);
+
+		// 将值填入现有六个值元素（按原有 id）
+		// 注意：values 数组长度为 6
+		outWords.textContent = res.values[0];
+		outChars.textContent = res.values[1];
+		outCharsNoSpace.textContent = res.values[2];
+		outLines.textContent = res.values[3];
+		outParas.textContent = res.values[4];
+		outRead.textContent = res.values[5];
+
+		// 阅读时间参考（使用返回的 wordsForRead，按 200 单位/分钟）
+		const minutes = Math.max(1, Math.round((res.wordsForRead || 1) / 200));
+		// 如果最后一个插槽用于显示非空/总字符，则同时用 tooltip 显示阅读时间（避免覆盖）
+		// 这里不强行替换 readtime 显示，以保留数值语义；但是在页面上我们把阅读时间放在元素 title
+		outRead.title = '估计阅读时间: ' + minutes + ' 分钟';
+	}
+
+	// 事件绑定（保留原有行为）
+	ta.addEventListener('input', update);
+	window.addEventListener('load', update);
+
+	btnClear.addEventListener('click', ()=>{
+		ta.value = '';
+		update();
+		ta.focus();
+	});
+
+	btnCopy.addEventListener('click', async ()=>{
+		try{
+			await navigator.clipboard.writeText(ta.value);
+		}catch(e){
+			ta.select();
+			document.execCommand('copy');
+			window.getSelection().removeAllRanges();
+		}
+	});
+
+	btnDownload.addEventListener('click', ()=>{
+		const blob = new Blob([ta.value], {type:'text/plain;charset=utf-8'});
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = 'text.txt';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	});
+
+	// 支持粘贴文件或拖放文本文件（基础）
+	ta.addEventListener('paste', (e)=>{
+		// 如果包含文件，读取第一个文本文件
+		const items = (e.clipboardData && e.clipboardData.items) || [];
+		for(const it of items){
+			if(it.kind === 'file'){
+				const f = it.getAsFile();
+				if(f && f.type.startsWith('text')){
+					const reader = new FileReader();
+					reader.onload = (ev)=> {
+						const pos = ta.selectionStart || 0;
+						const before = ta.value.slice(0,pos);
+						const after = ta.value.slice((ta.selectionEnd||pos));
+						ta.value = before + ev.target.result + after;
+						update();
+					};
+					reader.readAsText(f);
+					e.preventDefault();
+					return;
+				}
+			}
+		}
+	});
+
+	// 可选：拖放文件到 textarea
+	ta.addEventListener('dragover', (e)=> e.preventDefault());
+	ta.addEventListener('drop', (e)=>{
+		e.preventDefault();
+		const f = (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+		if(f && f.type.startsWith('text')){
+			const reader = new FileReader();
+			reader.onload = (ev)=>{ ta.value = ev.target.result; update(); };
+			reader.readAsText(f);
+		}
+	});
+
+	// 绑定下拉模式变化（如果存在）
+	if(modeSelect){
+		modeSelect.addEventListener('change', update);
+	}
+
+	// 绑定国旗按钮（如果存在），点击设置 aria-pressed / active 并触发更新
+	if(flags && flags.length){
+		flags.forEach(f=>{
+			f.setAttribute('role','button');
+			f.setAttribute('aria-pressed','false');
+			f.addEventListener('click', ()=>{
+				// 清空其他 flag 状态
+				flags.forEach(x=>{
+					x.setAttribute('aria-pressed','false');
+					x.classList.remove('active');
+				});
+				f.setAttribute('aria-pressed','true');
+				f.classList.add('active');
+				update();
+			});
+		});
+	}
+
+	// 初始更新
+	update();
+})();
