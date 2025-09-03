@@ -245,7 +245,7 @@
         // 阅读时间参考（使用返回的 wordsForRead，按 200 单位/分钟）
         const minutes = Math.max(1, Math.round((res.wordsForRead || 1) / 200));
         // 将估计阅读时间写入 mode 区提示（如果存在 detectedEl）
-        if (detectedEl) detectedEl.title = '估计阅读时间: ' + minutes + ' 分钟';
+        // if (detectedEl) detectedEl.title = '估计阅读时间: ' + minutes + ' 分钟';
     }
 
     // 事件绑定（保留原有行为）
