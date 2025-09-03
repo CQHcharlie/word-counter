@@ -39,7 +39,8 @@
 
 				<!-- 将国旗选择区移动到 controls 内，保持 id=flagRow -->
 				<div id="flagRow" class="flag-row" role="group" aria-label="语言选择">
-					<button class="flag" data-lang="auto" title="自动检测"><img src="flag/auto.svg" alt="自动检测"></button>
+					<!-- 默认选中自动检测 -->
+					<button class="flag active" aria-pressed="true" data-lang="auto" title="自动检测"><img src="flag/auto.svg" alt="自动检测"></button>
 					<button class="flag" data-lang="zh" title="中文（简体/中文）"><img src="flag/china.png" alt="中文"></button>
 					<button class="flag" data-lang="en" title="英文"><img src="flag/us.svg" alt="英文"></button>
 				</div>

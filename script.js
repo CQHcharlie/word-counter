@@ -10,6 +10,8 @@
 	const out7 = document.getElementById('stat7');
 
 	const btnClear = document.getElementById('clear');
+	// 新增：清空并粘贴按钮引用
+	const btnClearPaste = document.getElementById('clearPaste');
 	const btnCopy = document.getElementById('copy');
 	const btnDownload = document.getElementById('download');
 
@@ -308,11 +310,24 @@
 		}
 	});
 
+	// 保险：若没有 flag 被默认选中，则选中 data-lang="auto"
+	if(flags && flags.length){
+		let anyActive = false;
+		flags.forEach(f => { if(f.classList.contains('active') || f.getAttribute('aria-pressed') === 'true') anyActive = true; });
+		if(!anyActive){
+			const autoBtn = document.querySelector('#flagRow .flag[data-lang="auto"]');
+			if(autoBtn){
+				autoBtn.classList.add('active');
+				autoBtn.setAttribute('aria-pressed','true');
+			}
+		}
+	}
+
 	// 绑定国旗按钮（如果存在），点击设置 aria-pressed / active 并触发更新
 	if(flags && flags.length){
 		flags.forEach(f=>{
 			f.setAttribute('role','button');
-			f.setAttribute('aria-pressed','false');
+			f.setAttribute('aria-pressed', f.classList.contains('active') ? 'true' : 'false');
 			f.addEventListener('click', ()=>{
 				// 清空其他 flag 状态
 				flags.forEach(x=>{
@@ -323,6 +338,21 @@
 				f.classList.add('active');
 				update();
 			});
+		});
+	}
+
+	// 绑定清空并粘贴
+	if(btnClearPaste){
+		btnClearPaste.addEventListener('click', async ()=>{
+			try{
+				const clip = await navigator.clipboard.readText();
+				ta.value = clip || '';
+				update();
+				ta.focus();
+			}catch(e){
+				// 回退：提示用户手动粘贴
+				alert('无法直接读取剪贴板。请在文本框中手动粘贴（Ctrl/Cmd+V）。');
+			}
 		});
 	}
 
