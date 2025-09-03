@@ -14,7 +14,7 @@
 	const btnDownload = document.getElementById('download');
 
 	// 新增：支持国旗按钮（data-lang="zh"/"en"/"auto"）或下拉选择回退
-	const flags = document.querySelectorAll('[data-lang]');
+	const flags = document.querySelectorAll('#flagRow .flag[data-lang]');
 	const modeSelect = document.getElementById('mode'); // 兼容先前页面变更（可能为空）
 	const detectedEl = document.getElementById('detected');
 

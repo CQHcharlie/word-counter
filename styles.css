@@ -63,11 +63,20 @@ textarea {
 }
 
 button {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #cfd6e3;
+    background: #fff;
+    cursor: pointer
+}
+
+.flag {
     padding: 1px 2px;
     border-radius: 6px;
     border: 1px solid #cfd6e3;
     background: #fff;
     cursor: pointer
+    
 }
 
 button:hover {
