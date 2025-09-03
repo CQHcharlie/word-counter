@@ -20,6 +20,32 @@
 			background: rgba(43,108,176,0.08);
 			box-shadow: 0 0 0 3px rgba(43,108,176,0.08);
 		}
+
+		@media (orientation: portrait) {
+			/* 保证四个控制按钮在一排，若过窄可横向滚动 */
+			.button-row{
+				display:flex;
+				gap:8px;
+				flex: 0 0 auto;
+				overflow-x:auto;
+				-webkit-overflow-scrolling: touch;
+                width: 100%;
+			}
+			.button-row > button{
+				flex: 0 0 auto;
+                width: 23%;
+				white-space: nowrap;
+			}
+			/* 国旗区移到下一行，占满宽度 */
+			#flagRow{
+				order: 2;
+				/* width: 100%; */
+				margin-top: 8px;
+				justify-content: flex-start;
+			}
+			/* 保持 controls 可换行 */
+			.controls{ flex-wrap: wrap; }
+		}
 	</style>
 </head>
 <body>
@@ -32,10 +58,12 @@
 		<section class="editor">
 			<textarea id="input" placeholder="在此粘贴，拖放txt或输入文本..."></textarea>
 			<div class="controls">
-				<button id="clear">清空</button>
-				<button id="clearPaste">清空并粘贴</button>
-				<button id="copy">复制</button>
-				<button id="download">下载 .txt</button>
+				<div class="button-row">
+					<button id="clear">清空</button>
+					<button id="clearPaste">清空并粘贴</button>
+					<button id="copy">复制</button>
+					<button id="download">下载 .txt</button>
+				</div>
 
 				<!-- 将国旗选择区移动到 controls 内，保持 id=flagRow -->
 				<div id="flagRow" class="flag-row" role="group" aria-label="语言选择">
