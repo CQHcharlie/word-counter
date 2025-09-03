@@ -24,29 +24,31 @@
 		</section>
 
 		<section class="stats" aria-live="polite">
-			<div class="stat"><span class="label">单词数</span><span id="words">0</span></div>
-			<div class="stat"><span class="label">字符（含空格）</span><span id="chars">0</span></div>
-			<div class="stat"><span class="label">字符（不含空格）</span><span id="charsNoSpace">0</span></div>
-			<div class="stat"><span class="label">行数</span><span id="lines">0</span></div>
-			<div class="stat"><span class="label">段落数</span><span id="paras">0</span></div>
-			<div class="stat"><span class="label">估计阅读时间</span><span id="readtime">0 分钟</span></div>
+			<!-- 7 个数值槽（stat1..stat7），标签会由脚本动态替换 -->
+			<div class="stat"><span class="label">项1</span><span id="stat1">0</span></div>
+			<div class="stat"><span class="label">项2</span><span id="stat2">0</span></div>
+			<div class="stat"><span class="label">项3</span><span id="stat3">0</span></div>
+			<div class="stat"><span class="label">项4</span><span id="stat4">0</span></div>
+			<div class="stat"><span class="label">项5</span><span id="stat5">0</span></div>
+			<div class="stat"><span class="label">项6</span><span id="stat6">0</span></div>
+			<div class="stat"><span class="label">项7</span><span id="stat7">0</span></div>
 
-			<!-- 新增：语言模式选择与显示 -->
+			<!-- 新增：语言模式选择（国旗横向排列） -->
 			<div class="stat mode">
-				<span class="label">模式</span>
-				<select id="mode" aria-label="选择语言模式">
-					<option value="auto">自动</option>
-					<option value="zh">中文</option>
-					<option value="en">英文</option>
-				</select>
+				<span class="label">语言</span>
+				<!-- 使用 emoji 国旗作为占位，可替换为图标图片 -->
+				<div id="flagRow" class="flag-row" role="group" aria-label="语言选择">
+					<button class="flag" data-lang="auto" title="自动检测">🌐</button>
+					<button class="flag" data-lang="zh" title="中文（简体/中文）">🇨🇳</button>
+					<button class="flag" data-lang="en" title="英文">🇺🇸</button>
+					<!-- 可按需添加更多国旗 -->
+				</div>
 				<span id="detected" class="detected" aria-live="polite" title="自动检测到的语言">检测: 自动</span>
 			</div>
 		</section>
 	</main>
 
-	<footer>
-		<small>轻量离线版 · 无需联网</small>
-	</footer>
+
 
 	<script src="script.js"></script>
 </body>

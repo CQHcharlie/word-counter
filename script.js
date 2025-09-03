@@ -1,18 +1,21 @@
 (function(){
 	const ta = document.getElementById('input');
-	const outWords = document.getElementById('words');
-	const outChars = document.getElementById('chars');
-	const outCharsNoSpace = document.getElementById('charsNoSpace');
-	const outLines = document.getElementById('lines');
-	const outParas = document.getElementById('paras');
-	const outRead = document.getElementById('readtime');
+	// 使用 7 个通用输出槽
+	const out1 = document.getElementById('stat1');
+	const out2 = document.getElementById('stat2');
+	const out3 = document.getElementById('stat3');
+	const out4 = document.getElementById('stat4');
+	const out5 = document.getElementById('stat5');
+	const out6 = document.getElementById('stat6');
+	const out7 = document.getElementById('stat7');
+
 	const btnClear = document.getElementById('clear');
 	const btnCopy = document.getElementById('copy');
 	const btnDownload = document.getElementById('download');
 
 	// 新增：支持国旗按钮（data-lang="zh"/"en"/"auto"）或下拉选择回退
 	const flags = document.querySelectorAll('[data-lang]');
-	const modeSelect = document.getElementById('mode'); // 兼容先前页面变更
+	const modeSelect = document.getElementById('mode'); // 兼容先前页面变更（可能为空）
 	const detectedEl = document.getElementById('detected');
 
 	// 小工具：安全匹配 Unicode Han
@@ -80,15 +83,15 @@
 		return 'mixed';
 	}
 
-	// 更新统计面板的标签（复用页面上现有六个 .stat 插槽）
+	// 只选择非 mode 的 stat 标签用于替换
 	function setStatLabels(labels){
-		const labelEls = document.querySelectorAll('.stat .label');
-		for(let i=0;i<labelEls.length;i++){
+		const labelEls = document.querySelectorAll('.stats > .stat:not(.mode) .label');
+		for(let i=0;i<labelEls.length && i<labels.length;i++){
 			if(labels[i]) labelEls[i].textContent = labels[i];
 		}
 	}
 
-	// 主计数函数（根据模式返回所需项）
+	// 主计数函数（返回 7 个值）
 	function computeAll(text, effectiveMode){
 		const totalChars = text.length;
 		const totalCharsNoSpace = text.replace(/\s+/g,'').length;
@@ -101,30 +104,47 @@
 		const punctuation = countPunctuation(text);
 		const nonEmptySeq = countNonEmptySequences(text);
 
-		// 中文模式：汉字数、文本数（含数字与英文）、非空文本数（文本数+标点）、总字符数、句数、段数
+		// 中文显示：
+		// '汉字',
+		// '无标点与空格',        => totalCharsNoSpace - punctuation
+		// '不含空格',            => totalCharsNoSpace
+		// '标点和符号',          => punctuation
+		// '句数',                => sentences
+		// '段数',                => paras
+		// '总字符数'             => totalChars
 		if(effectiveMode === 'zh'){
+			const noPunctNoSpace = Math.max(0, totalCharsNoSpace - punctuation);
 			return {
 				labels: [
-					'字数（汉字）',
-					'文本数（含数字与英文）',
-					'非空文本数（含标点）',
+					'汉字',
+					'无标点与空格',
+					'不含空格',
+					'标点和符号',
 					'句数',
 					'段数',
 					'总字符数'
 				],
 				values: [
 					hanCount,
-					latinWords, // 文本数（这里按英文/数字序列计数）
-					(latinWords + punctuation),
+					noPunctNoSpace,
+					totalCharsNoSpace,
+					punctuation,
 					sentences,
 					paras,
 					totalChars
 				],
-				wordsForRead: Math.max(1, hanCount) // 阅读时间参考
+				wordsForRead: Math.max(1, hanCount)
 			};
 		}
 
-		// 英文模式：单词数、句数、段数、字母数、文本数（含数字与中文）、非空文本数 / 总字符数
+		// 英文显示：
+		// '单词数',
+		// '句数',
+		// '段数',
+		// '字母数',
+		// '标点和符号',
+		// '不含空格',
+		// '总字符数'
 		if(effectiveMode === 'en'){
 			return {
 				labels: [
@@ -132,22 +152,24 @@
 					'句数',
 					'段数',
 					'字母数',
-					'文本数（含数字与中文）',
-					'非空文本数 / 总字符数'
+					'标点和符号',
+					'不含空格',
+					'总字符数'
 				],
 				values: [
 					latinWords,
 					sentences,
 					paras,
 					letters,
-					textUnits,
-					(nonEmptySeq + ' / ' + totalChars)
+					punctuation,
+					totalCharsNoSpace,
+					totalChars
 				],
 				wordsForRead: Math.max(1, latinWords)
 			};
 		}
 
-		// 自动/混合：综合显示（汉字+英文单词）与常规项
+		// 自动/混合：采用混合展示（中英合并计数）
 		return {
 			labels: [
 				'单词数（中英混合）',
@@ -155,7 +177,8 @@
 				'非空文本数（含标点）',
 				'句数',
 				'段数',
-				'总字符数'
+				'总字符数',
+				'备用'
 			],
 			values: [
 				latinWords + hanCount,
@@ -163,7 +186,8 @@
 				nonEmptySeq,
 				sentences,
 				paras,
-				totalChars
+				totalChars,
+				'' // 占位
 			],
 			wordsForRead: Math.max(1, latinWords + hanCount)
 		};
@@ -172,9 +196,7 @@
 	// 更新 UI（标签与数值）
 	function update(){
 		const text = ta.value || '';
-		// 决定当前模式：优先国旗按钮，其次下拉选择，最后自动
 		let userMode = 'auto';
-		// 国旗优先：查找被选中的 flag（带 class "active" 或 aria-pressed）
 		let chosenFlag = null;
 		if(flags && flags.length){
 			for(const f of flags){
@@ -203,20 +225,19 @@
 		const res = computeAll(text, effective);
 		setStatLabels(res.labels);
 
-		// 将值填入现有六个值元素（按原有 id）
-		// 注意：values 数组长度为 6
-		outWords.textContent = res.values[0];
-		outChars.textContent = res.values[1];
-		outCharsNoSpace.textContent = res.values[2];
-		outLines.textContent = res.values[3];
-		outParas.textContent = res.values[4];
-		outRead.textContent = res.values[5];
+		// 填入 7 个输出槽
+		out1.textContent = res.values[0];
+		out2.textContent = res.values[1];
+		out3.textContent = res.values[2];
+		out4.textContent = res.values[3];
+		out5.textContent = res.values[4];
+		out6.textContent = res.values[5];
+		out7.textContent = res.values[6];
 
 		// 阅读时间参考（使用返回的 wordsForRead，按 200 单位/分钟）
 		const minutes = Math.max(1, Math.round((res.wordsForRead || 1) / 200));
-		// 如果最后一个插槽用于显示非空/总字符，则同时用 tooltip 显示阅读时间（避免覆盖）
-		// 这里不强行替换 readtime 显示，以保留数值语义；但是在页面上我们把阅读时间放在元素 title
-		outRead.title = '估计阅读时间: ' + minutes + ' 分钟';
+		// 将估计阅读时间写入 mode 区提示（如果存在 detectedEl）
+		if(detectedEl) detectedEl.title = '估计阅读时间: ' + minutes + ' 分钟';
 	}
 
 	// 事件绑定（保留原有行为）
@@ -287,11 +308,6 @@
 		}
 	});
 
-	// 绑定下拉模式变化（如果存在）
-	if(modeSelect){
-		modeSelect.addEventListener('change', update);
-	}
-
 	// 绑定国旗按钮（如果存在），点击设置 aria-pressed / active 并触发更新
 	if(flags && flags.length){
 		flags.forEach(f=>{
@@ -308,6 +324,11 @@
 				update();
 			});
 		});
+	}
+
+	// 如果页面仍有下拉选择，保持兼容
+	if(modeSelect){
+		modeSelect.addEventListener('change', update);
 	}
 
 	// 初始更新
