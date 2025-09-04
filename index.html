@@ -21,30 +21,32 @@
 			box-shadow: 0 0 0 3px rgba(43,108,176,0.08);
 		}
 
-		@media (orientation: portrait) {
-			/* 保证四个控制按钮在一排，若过窄可横向滚动 */
+		@media (orientation: portrait), (max-width:820px) {
+			/* 按钮容器在竖屏时不换行，四个按钮在一排并均分可用宽度 */
 			.button-row{
 				display:flex;
 				gap:8px;
 				flex: 0 0 auto;
 				overflow-x:auto;
 				-webkit-overflow-scrolling: touch;
-                width: 100%;
+				width: 100%;
+				flex-wrap: nowrap; /* 保证内部按钮不换行 */
 			}
+			/* 四个按钮平分可用空间，最小宽度 0 避免溢出换行 */
 			.button-row > button{
-				flex: 0 0 auto;
-                width: 23%;
+				flex: 1 1 0;
+				min-width: 0;
 				white-space: nowrap;
 			}
 			/* 国旗区移到下一行，占满宽度 */
 			#flagRow{
 				order: 2;
-				/* width: 100%; */
+				width: 100%;
 				margin-top: 8px;
 				justify-content: flex-start;
 			}
-			/* 保持 controls 可换行 */
-			.controls{ flex-wrap: wrap; }
+			/* controls 保持可换行以便 flagRow 能换行到下一行 */
+			.controls{ flex-wrap: wrap; align-items: center; }
 		}
 
 		/* 深色模式覆盖（class .dark 加在 <html> 或 <body> 上） */
