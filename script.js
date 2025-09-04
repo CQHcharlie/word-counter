@@ -43,61 +43,29 @@
         }
     }
 
-    // 初始化主题（优先本地设置，否则 system）
-    (function initTheme() {
-        const stored = getStoredTheme();
-        applyTheme(stored);
-        // 在 system 模式下，监听系统主题变化
-        if (mqDark && mqDark.addEventListener) {
-            mqDark.addEventListener('change', (e) => {
-                const current = getStoredTheme();
-                if (current === 'system') applyTheme('system');
-            });
-        }
+    // 初始化主题（优先本地设置，否则 system），单次点击即可切换（基于实际生效主题切换）
+    (function initTheme(){
+		const stored = getStoredTheme();
+		applyTheme(stored);
+		// 在 system 模式下，监听系统主题变化
+		if(mqDark && mqDark.addEventListener){
+			mqDark.addEventListener('change', ()=>{
+				const current = getStoredTheme();
+				if(current === 'system') applyTheme('system');
+			});
+		}
 
-        // 双击确认逻辑：当从 dark 切到 light 时需要二次确认
-        let pendingConfirm = false;
-        let pendingTimeout = null;
-
-        // 点击切换： cycle system -> dark -> light -> system
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const cur = getStoredTheme();
-                let next = 'system';
-                if (cur === 'system') next = 'dark';
-                else if (cur === 'dark') next = 'light';
-                else if (cur === 'light') next = 'system';
-
-                // 如果要从 dark 切到 light，要求二次点击确认
-                if (cur === 'dark' && next === 'light') {
-                    if (!pendingConfirm) {
-                        // 进入确认态：提示并高亮按钮，等待第二次点击
-                        pendingConfirm = true;
-                        themeToggle.classList.add('confirm');
-                        themeToggle.title = '再次点击以确认切换到浅色模式（2 秒内有效）';
-                        // 超时清除确认态
-                        pendingTimeout = setTimeout(() => {
-                            pendingConfirm = false;
-                            themeToggle.classList.remove('confirm');
-                            // 恢复按钮显示为当前主题
-                            applyTheme(cur);
-                        }, 2000);
-                        return;
-                    }
-                    // 第二次点击：确认并继续切换
-                    if (pendingConfirm) {
-                        pendingConfirm = false;
-                        clearTimeout(pendingTimeout);
-                        themeToggle.classList.remove('confirm');
-                    }
-                }
-
-                // 非需要确认的情况或已确认：执行切换
-                storeTheme(next);
-                applyTheme(next);
-            });
-        }
-    })();
+		// 改为：根据当前实际生效主题直接切换（避免存储值与生效值不同步导致需要多次点击）
+		if(themeToggle){
+			themeToggle.addEventListener('click', ()=>{
+				// 如果当前页面处于暗色（.dark 存在），则切到明确的浅色；否则切到明确的暗色
+				const effectiveDark = document.documentElement.classList.contains('dark');
+				const next = effectiveDark ? 'light' : 'dark';
+				storeTheme(next);
+				applyTheme(next);
+			});
+		}
+	})();
 
     // 新增：支持国旗按钮（data-lang="zh"/"en"/"auto"）或下拉选择回退
     const flags = document.querySelectorAll('#flagRow .flag[data-lang]');
