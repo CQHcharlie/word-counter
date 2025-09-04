@@ -112,7 +112,8 @@ button:hover {
     }
 
     textarea {
-        min-height: 420px
+        min-height: 150px;
+        height: calc(100vh - 480px);
     }
 
     .controls {
