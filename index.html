@@ -46,6 +46,43 @@
 			/* 保持 controls 可换行 */
 			.controls{ flex-wrap: wrap; }
 		}
+
+		/* 深色模式覆盖（class .dark 加在 <html> 或 <body> 上） */
+		:root{ --bg:#f7f8fb; --panel:#fff; --text:#222; --muted:#666; --border:#dcdfe6; --accent:#2b6cb0 }
+		.dark{ --bg:#0b0f14; --panel:#0f1720; --text:#e6eef8; --muted:#9aa6b2; --border:#1f2933; --accent:#4ea0ff }
+
+		body{ background:var(--bg); color:var(--text); }
+		textarea{ background:var(--panel); color:var(--text); border:1px solid var(--border); }
+		.stats, .controls, .stat{ background:var(--panel); color:var(--text); border-color:var(--border); }
+		button{ background:transparent;color:var(--text);border-color:var(--border) }
+		button:hover{ box-shadow: 0 0 0 3px rgba(0,0,0,0.04); }
+
+		/* 右上角主题切换按钮：绝对定位（随页面滚动） */
+		.theme-toggle{
+			position:absolute; top:12px; right:12px; z-index:1200;
+			width:42px;height:42px;border-radius:8px;border:1px solid var(--border);
+			background:var(--panel);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+			transition: transform .12s ease, background .18s ease, box-shadow .18s ease, color .12s ease;
+		}
+		.theme-toggle:hover{ transform:translateY(-1px); }
+		.theme-toggle .label{display:none}
+
+		/* 深色模式下 hover：深蓝色发亮效果 */
+		/* .dark .theme-toggle:hover{
+			background: linear-gradient(180deg, var(--accent), #0f4f8a);
+			color: #fff;
+			box-shadow: 0 6px 24px rgba(30,90,160,0.35), 0 0 8px rgba(78,160,255,0.28);
+			transform: translateY(-2px) scale(1.02);
+		} */
+
+		/* 确认态视觉：要求二次点击时使用（浅色确认提示） */
+		.theme-toggle.confirm{
+			border-color: var(--accent);
+			box-shadow: 0 6px 20px rgba(78,160,255,0.20), 0 0 8px rgba(78,160,255,0.18);
+			background: linear-gradient(180deg, rgba(78,160,255,0.06), rgba(78,160,255,0.02));
+			transform: translateY(-1px) scale(1.02);
+		}
 	</style>
 </head>
 <body>
@@ -93,7 +130,8 @@
 		</section>
 	</main>
 
-
+	<!-- 主题切换开关（右上角） -->
+	<button id="themeToggle" class="theme-toggle" aria-pressed="false" title="切换主题">🌙</button>
 
 	<script src="script.js"></script>
 </body>

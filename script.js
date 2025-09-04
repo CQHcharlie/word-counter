@@ -15,6 +15,90 @@
     const btnCopy = document.getElementById('copy');
     const btnDownload = document.getElementById('download');
 
+    // 主题切换：按钮引用与逻辑
+    const themeToggle = document.getElementById('themeToggle');
+    const mqDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+
+    function getStoredTheme() {
+        return localStorage.getItem('wc_theme') || 'system';
+    }
+    function storeTheme(t) { localStorage.setItem('wc_theme', t); }
+
+    function prefersDark() {
+        return !!(mqDark && mqDark.matches);
+    }
+
+    function applyTheme(mode) {
+        // mode: 'dark' | 'light' | 'system'
+        let isDark = (mode === 'dark') || (mode === 'system' && prefersDark());
+        document.documentElement.classList.toggle('dark', !!isDark);
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            // 更新按钮图标： 🌙 = dark, ☀️ = light, 🖥 = system (when system and currently light/dark show current)
+            let label = '';
+            if (mode === 'system') label = prefersDark() ? '🌙' : '☀️';
+            else label = (mode === 'dark') ? '🌙' : '☀️';
+            themeToggle.textContent = label;
+            themeToggle.title = '主题: ' + mode;
+        }
+    }
+
+    // 初始化主题（优先本地设置，否则 system）
+    (function initTheme() {
+        const stored = getStoredTheme();
+        applyTheme(stored);
+        // 在 system 模式下，监听系统主题变化
+        if (mqDark && mqDark.addEventListener) {
+            mqDark.addEventListener('change', (e) => {
+                const current = getStoredTheme();
+                if (current === 'system') applyTheme('system');
+            });
+        }
+
+        // 双击确认逻辑：当从 dark 切到 light 时需要二次确认
+        let pendingConfirm = false;
+        let pendingTimeout = null;
+
+        // 点击切换： cycle system -> dark -> light -> system
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const cur = getStoredTheme();
+                let next = 'system';
+                if (cur === 'system') next = 'dark';
+                else if (cur === 'dark') next = 'light';
+                else if (cur === 'light') next = 'system';
+
+                // 如果要从 dark 切到 light，要求二次点击确认
+                if (cur === 'dark' && next === 'light') {
+                    if (!pendingConfirm) {
+                        // 进入确认态：提示并高亮按钮，等待第二次点击
+                        pendingConfirm = true;
+                        themeToggle.classList.add('confirm');
+                        themeToggle.title = '再次点击以确认切换到浅色模式（2 秒内有效）';
+                        // 超时清除确认态
+                        pendingTimeout = setTimeout(() => {
+                            pendingConfirm = false;
+                            themeToggle.classList.remove('confirm');
+                            // 恢复按钮显示为当前主题
+                            applyTheme(cur);
+                        }, 2000);
+                        return;
+                    }
+                    // 第二次点击：确认并继续切换
+                    if (pendingConfirm) {
+                        pendingConfirm = false;
+                        clearTimeout(pendingTimeout);
+                        themeToggle.classList.remove('confirm');
+                    }
+                }
+
+                // 非需要确认的情况或已确认：执行切换
+                storeTheme(next);
+                applyTheme(next);
+            });
+        }
+    })();
+
     // 新增：支持国旗按钮（data-lang="zh"/"en"/"auto"）或下拉选择回退
     const flags = document.querySelectorAll('#flagRow .flag[data-lang]');
     const modeSelect = document.getElementById('mode'); // 兼容先前页面变更（可能为空）
