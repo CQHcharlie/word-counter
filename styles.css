@@ -82,7 +82,8 @@ button {
 }
 
 button:hover {
-    background: #f0f4ff
+    /* 按钮鼠标悬停颜色 */
+    background: #f0f4ff30;
 }
 
 /* 模式选择样式 */
