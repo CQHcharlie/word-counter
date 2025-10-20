@@ -62,4 +62,4 @@
 - CC0 1.0 Universal
 
 ## Stars
-[![Stargazers over time](https://starchart.cc/CQHcharlie/word-counter.svg?background=%23000000&axis=%23d3c8c8&line=%2300990f)](https://starchart.cc/CQHcharlie/word-counter)
+[![Stargazers over time](https://starchart.cc/CQHcharlie/word-counter.svg?background=%23000000&axis=%23d3c8c8&line=%2300990f)](#)
